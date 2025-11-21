@@ -27,8 +27,10 @@
 - Real-time credibility scoring
 - Build questioning strategies in a safe environment
 
-### 4. Trial Simulator (Live Audio)
-- **Real-time voice-based courtroom simulation** using Gemini Live API
+### 4. Trial Simulator (Live Audio) 🎤
+- **Real-time 2-way voice conversation** with AI using Gemini Live API
+- **Industry-leading voice recognition** - Speak naturally, AI responds with voice
+- **Instant objection system** - AI interrupts you like a real opposing counsel
 - Practice all trial phases:
   - Pre-trial motions
   - Voir dire (jury selection)
@@ -38,11 +40,16 @@
   - Closing arguments
   - Sentencing hearings
 - Three difficulty modes:
-  - **Learn** - Guided practice with explanations
-  - **Practice** - Moderate objections with hints
-  - **Trial** - Realistic adversarial environment
-- Real-time objection system with procedural accuracy
-- AI coaching with rhetorical analysis and fallacy detection
+  - **Learn** - Guided practice with AI-generated scripts
+  - **Practice** - Balanced with hints and feedback
+  - **Trial** - Realistic adversarial environment (hard mode)
+- Real-time coaching with rhetorical analysis and fallacy detection
+- Live transcription of both your speech and AI responses
+- Visual objection alerts with legal grounds
+- Teleprompter scripts for suggested responses
+
+**📖 See [VOICE_FEATURES.md](VOICE_FEATURES.md) for detailed voice feature guide**
+**🧪 See [AUDIO_TESTING.md](AUDIO_TESTING.md) for audio testing and troubleshooting**
 
 ### 5. Strategy & AI Insights
 - Deep strategic analysis using Gemini's thinking models
@@ -167,14 +174,28 @@ lexsim-ai-trial-prep/
 4. The AI will respond in character, adapting to your questioning strategy
 5. Review credibility scores and adjust your approach
 
-### Live Trial Simulation
+### Live Trial Simulation (Voice)
 
-1. Navigate to **Trial Simulator**
-2. Select a case and trial phase (e.g., Cross-Examination)
-3. Choose difficulty mode (Learn, Practice, or Trial)
-4. Click **Start Session** and allow microphone access
-5. Speak naturally - the AI will respond with voice and handle objections in real-time
-6. Review coaching feedback to improve your technique
+1. **Prerequisites**: Working microphone, Chrome/Edge browser, quiet environment
+2. Navigate to **Trial Simulator**
+3. Select a case and trial phase (e.g., Cross-Examination)
+4. Choose difficulty mode:
+   - **Learn** - Best for first-time users, provides full scripts
+   - **Practice** - Balanced difficulty with helpful feedback
+   - **Trial** - Realistic and challenging, no hand-holding
+5. Click **"Enter Courtroom"** then **"Start"**
+6. Allow microphone access when prompted
+7. **Speak naturally** - the AI will:
+   - Transcribe your words in real-time
+   - Respond with natural voice (not robotic)
+   - Interrupt with objections when appropriate
+   - Provide live coaching feedback
+8. Watch for objection alerts and respond appropriately
+9. Review coaching panel for tips and suggested responses
+
+**💡 Tip**: Start with **Learn mode** in **Cross Examination** to get comfortable!
+
+**⚠️ Important**: HTTPS or localhost required for microphone access. The Live API uses significant bandwidth and API tokens.
 
 ### Getting Strategic Insights
 

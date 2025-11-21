@@ -1,33 +1,60 @@
 
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { AppContext } from '../App';
-import { Settings as SettingsIcon, Key, Database, Download, Upload, AlertCircle, Check, User, Moon, Sun, Volume2, Palette, Shield, Info } from 'lucide-react';
+import { Settings as SettingsIcon, Key, Database, Download, Upload, AlertCircle, Check, User, Moon, Sun, Volume2, Palette, Shield, Info, Trash2, CheckCircle } from 'lucide-react';
+import { exportAllData, importAllData, clearAllData, getStorageInfo, savePreferences, loadPreferences } from '../utils/storage';
 
 const Settings = () => {
-  const { cases } = useContext(AppContext);
-  const [apiKey, setApiKey] = useState('');
-  const [showApiKey, setShowApiKey] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saved' | 'error'>('idle');
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
-  const [autoSaveEnabled, setAutoSaveEnabled] = useState(false);
+  const { cases, theme, setTheme } = useContext(AppContext);
+  const [displayName, setDisplayName] = useState('');
+  const [title, setTitle] = useState('');
+  const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
+  const [storageInfo, setStorageInfo] = useState({ used: 0, available: 0, percentage: 0 });
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
   const currentApiKey = process.env.API_KEY || '';
   const isApiKeyConfigured = currentApiKey && currentApiKey !== '';
 
-  const handleSaveApiKey = () => {
-    // Note: This won't actually update the environment variable in the browser
-    // The user needs to update .env.local and restart the dev server
-    setSaveStatus('error');
-    setTimeout(() => setSaveStatus('idle'), 3000);
+  useEffect(() => {
+    const prefs = loadPreferences();
+    setDisplayName(prefs.displayName);
+    setTitle(prefs.title);
+    setAutoSaveEnabled(prefs.autoSave);
+    updateStorageInfo();
+  }, []);
+
+  useEffect(() => {
+    updateStorageInfo();
+  }, [cases]);
+
+  const updateStorageInfo = () => {
+    setStorageInfo(getStorageInfo());
+  };
+
+  const handleSavePreferences = () => {
+    savePreferences({
+      displayName,
+      title,
+      autoSave: autoSaveEnabled,
+      theme
+    });
+    setSaveMessage('Preferences saved successfully!');
+    setTimeout(() => setSaveMessage(null), 3000);
+  };
+
+  const handleThemeChange = (newTheme: 'dark' | 'light') => {
+    setTheme(newTheme);
+    savePreferences({ theme: newTheme });
+  };
+
+  const handleAutoSaveToggle = () => {
+    const newValue = !autoSaveEnabled;
+    setAutoSaveEnabled(newValue);
+    savePreferences({ autoSave: newValue });
   };
 
   const exportData = () => {
-    const data = {
-      cases,
-      exportDate: new Date().toISOString(),
-      version: '1.0'
-    };
-
+    const data = exportAllData();
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -35,6 +62,9 @@ const Settings = () => {
     a.download = `lexsim-backup-${new Date().toISOString().split('T')[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
+
+    setSaveMessage('Data exported successfully!');
+    setTimeout(() => setSaveMessage(null), 3000);
   };
 
   const importData = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -45,21 +75,44 @@ const Settings = () => {
     reader.onload = (e) => {
       try {
         const data = JSON.parse(e.target?.result as string);
-        // In a real implementation, you would restore the cases here
-        console.log('Import data:', data);
-        alert('Import functionality requires backend implementation');
+        if (importAllData(data)) {
+          setSaveMessage('Data imported successfully! Refreshing page...');
+          setTimeout(() => window.location.reload(), 1500);
+        } else {
+          alert('Failed to import data. Please try again.');
+        }
       } catch (error) {
         alert('Failed to import data. Invalid file format.');
       }
     };
     reader.readAsText(file);
+    event.target.value = ''; // Reset input
+  };
+
+  const handleClearAllData = () => {
+    if (window.confirm('Are you sure you want to delete ALL data? This cannot be undone!')) {
+      if (window.confirm('This will delete all cases, sessions, and settings. Continue?')) {
+        if (clearAllData()) {
+          setSaveMessage('All data cleared. Refreshing...');
+          setTimeout(() => window.location.reload(), 1500);
+        }
+      }
+    }
   };
 
   return (
     <div className="space-y-6 max-w-4xl">
-      <div>
-        <h1 className="text-3xl font-bold text-white font-serif">Settings</h1>
-        <p className="text-slate-400 mt-2">Configure your LexSim preferences and API settings</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-white font-serif">Settings</h1>
+          <p className="text-slate-400 mt-2">Configure your LexSim preferences and API settings</p>
+        </div>
+        {saveMessage && (
+          <div className="flex items-center gap-2 px-4 py-2 bg-green-900/30 border border-green-700 rounded-lg">
+            <CheckCircle className="text-green-500" size={18} />
+            <span className="text-green-400 text-sm">{saveMessage}</span>
+          </div>
+        )}
       </div>
 
       {/* API Configuration */}
@@ -118,13 +171,25 @@ const Settings = () => {
 
         <div className="space-y-4">
           {/* Storage Info */}
-          <div className="bg-slate-900/50 rounded-lg p-4">
-            <div className="flex items-center justify-between mb-2">
+          <div className="bg-slate-900/50 rounded-lg p-4 space-y-3">
+            <div className="flex items-center justify-between">
               <span className="text-slate-300 font-medium">Cases stored</span>
               <span className="text-gold-500 font-bold text-lg">{cases.length}</span>
             </div>
+            <div className="flex items-center justify-between">
+              <span className="text-slate-300 font-medium">Storage used</span>
+              <span className="text-slate-400 text-sm">{storageInfo.used} KB / {storageInfo.available} KB</span>
+            </div>
+            <div className="w-full bg-slate-700 rounded-full h-2">
+              <div
+                className={`h-2 rounded-full transition-all ${
+                  storageInfo.percentage > 80 ? 'bg-red-500' : storageInfo.percentage > 50 ? 'bg-yellow-500' : 'bg-green-500'
+                }`}
+                style={{ width: `${Math.min(storageInfo.percentage, 100)}%` }}
+              />
+            </div>
             <p className="text-xs text-slate-400">
-              Data is stored in browser memory and will be lost on page refresh
+              Data is automatically saved to browser localStorage
             </p>
           </div>
 
@@ -155,14 +220,13 @@ const Settings = () => {
           <div className="flex items-center justify-between p-3 bg-slate-900/50 rounded-lg">
             <div>
               <p className="text-slate-300 font-medium">Auto-save to LocalStorage</p>
-              <p className="text-xs text-slate-400 mt-1">Persist data between sessions (not implemented)</p>
+              <p className="text-xs text-slate-400 mt-1">Automatically persist data between sessions</p>
             </div>
             <button
-              onClick={() => setAutoSaveEnabled(!autoSaveEnabled)}
-              disabled
+              onClick={handleAutoSaveToggle}
               className={`relative w-12 h-6 rounded-full transition-colors ${
                 autoSaveEnabled ? 'bg-gold-500' : 'bg-slate-600'
-              } disabled:opacity-50 cursor-not-allowed`}
+              }`}
             >
               <div
                 className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${
@@ -171,62 +235,79 @@ const Settings = () => {
               />
             </button>
           </div>
+
+          {/* Clear All Data */}
+          <button
+            onClick={handleClearAllData}
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-900/20 hover:bg-red-900/30 border border-red-700 rounded-lg transition-colors text-red-400"
+          >
+            <Trash2 size={18} />
+            <span className="font-medium">Clear All Data</span>
+          </button>
         </div>
       </div>
 
-      {/* Appearance (Future Feature) */}
-      <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 opacity-50">
+      {/* Appearance */}
+      <div className="bg-slate-800 border border-slate-700 rounded-xl p-6">
         <div className="flex items-center gap-3 mb-4">
           <Palette className="text-gold-500" size={24} />
           <h2 className="text-xl font-semibold text-white">Appearance</h2>
-          <span className="text-xs px-2 py-1 bg-slate-700 text-slate-400 rounded">Coming Soon</span>
         </div>
 
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              {theme === 'dark' ? <Moon size={20} className="text-slate-400" /> : <Sun size={20} className="text-slate-400" />}
-              <span className="text-slate-400">Theme</span>
+              {theme === 'dark' ? <Moon size={20} className="text-gold-500" /> : <Sun size={20} className="text-gold-500" />}
+              <span className="text-slate-300">Theme</span>
             </div>
             <select
-              disabled
               value={theme}
-              className="px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-400 cursor-not-allowed"
+              onChange={(e) => handleThemeChange(e.target.value as 'dark' | 'light')}
+              className="px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 hover:bg-slate-600 transition-colors cursor-pointer"
             >
               <option value="dark">Dark</option>
               <option value="light">Light</option>
             </select>
           </div>
+          <p className="text-xs text-slate-400 italic">Light theme coming soon. Currently, only dark theme is fully supported.</p>
         </div>
       </div>
 
-      {/* User Profile (Future Feature) */}
-      <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 opacity-50">
+      {/* User Profile */}
+      <div className="bg-slate-800 border border-slate-700 rounded-xl p-6">
         <div className="flex items-center gap-3 mb-4">
           <User className="text-gold-500" size={24} />
           <h2 className="text-xl font-semibold text-white">User Profile</h2>
-          <span className="text-xs px-2 py-1 bg-slate-700 text-slate-400 rounded">Coming Soon</span>
         </div>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-400 mb-2">Display Name</label>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Display Name</label>
             <input
               type="text"
-              disabled
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
               placeholder="Attorney J. Doe"
-              className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-400 cursor-not-allowed"
+              className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 focus:outline-none focus:ring-2 focus:ring-gold-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-400 mb-2">Title</label>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Title</label>
             <input
               type="text"
-              disabled
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
               placeholder="Senior Litigator"
-              className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-400 cursor-not-allowed"
+              className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 focus:outline-none focus:ring-2 focus:ring-gold-500"
             />
           </div>
+          <button
+            onClick={handleSavePreferences}
+            className="w-full bg-gold-500 hover:bg-gold-600 text-slate-900 font-semibold py-2 px-4 rounded-lg transition-colors"
+          >
+            Save Profile
+          </button>
+          <p className="text-xs text-slate-400">Profile information is stored locally and displayed in the header.</p>
         </div>
       </div>
 

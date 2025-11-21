@@ -181,16 +181,16 @@ const TrialSim = () => {
       const systemInstruction = getTrialSimSystemInstruction(phase, mode, opponentName, activeCase.summary);
 
       const sessionPromise = ai.live.connect({
-        model: 'gemini-2.5-flash-native-audio-preview-09-2025',
+        model: 'gemini-2.5-flash-live',
         config: {
           responseModalities: [Modality.AUDIO],
           speechConfig: {
-            voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Puck' } }, 
+            voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Puck' } },
           },
           systemInstruction: systemInstruction,
           tools: [{ functionDeclarations: [coachingTool, objectionTool] }],
-          inputAudioTranscription: { model: "gemini-2.5-flash-native-audio-preview-09-2025" },
-          outputAudioTranscription: { model: "gemini-2.5-flash-native-audio-preview-09-2025" },
+          inputAudioTranscription: { model: "gemini-2.5-flash-live" },
+          outputAudioTranscription: { model: "gemini-2.5-flash-live" },
         },
         callbacks: {
           onopen: () => {
@@ -294,10 +294,27 @@ const TrialSim = () => {
       });
       sessionRef.current = sessionPromise;
 
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      console.error('Live session error:', e);
       setIsConnecting(false);
-      alert("Failed to connect. Please ensure microphone permissions are granted.");
+
+      let errorMessage = "Failed to start live session. ";
+
+      if (e.name === 'NotAllowedError' || e.message?.includes('Permission')) {
+        errorMessage += "Microphone permission was denied. Please allow microphone access and try again.";
+      } else if (e.message?.includes('API key')) {
+        errorMessage += "Invalid API key. Please check your GEMINI_API_KEY in .env.local";
+      } else if (e.message?.includes('network') || e.message?.includes('fetch')) {
+        errorMessage += "Network error. Please check your internet connection.";
+      } else if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        errorMessage += "Your browser doesn't support microphone access. Try Chrome, Edge, or Safari.";
+      } else if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
+        errorMessage += "HTTPS is required for microphone access. Use localhost for development.";
+      } else {
+        errorMessage += e.message || "Unknown error. Check console for details.";
+      }
+
+      alert(errorMessage);
     }
   };
 

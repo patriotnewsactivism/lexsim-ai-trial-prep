@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { HashRouter, Routes, Route, Navigate, useLocation, Link } from 'react-router-dom';
 import { LayoutDashboard, Scale, FileText, Users, BrainCircuit, Gavel, Settings, Menu, X, MessageSquare, Mic } from 'lucide-react';
 import Dashboard from './components/Dashboard';
@@ -11,6 +11,7 @@ import DraftingAssistant from './components/DraftingAssistant';
 import SettingsPage from './components/Settings';
 import { MOCK_CASES } from './constants';
 import { Case } from './types';
+import { loadCases, saveCases, loadActiveCaseId, saveActiveCaseId, loadPreferences } from './utils/storage';
 
 // Sidebar Component
 const Sidebar = ({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: (v: boolean) => void }) => {
@@ -107,16 +108,62 @@ export const AppContext = React.createContext<{
   activeCase: Case | null;
   setActiveCase: (c: Case) => void;
   addCase: (c: Case) => void;
+  updateCase: (id: string, updates: Partial<Case>) => void;
+  deleteCase: (id: string) => void;
+  theme: 'dark' | 'light';
+  setTheme: (theme: 'dark' | 'light') => void;
 }>({
   cases: [],
   activeCase: null,
   setActiveCase: () => {},
   addCase: () => {},
+  updateCase: () => {},
+  deleteCase: () => {},
+  theme: 'dark',
+  setTheme: () => {},
 });
 
 const App = () => {
-  const [cases, setCases] = useState<Case[]>(MOCK_CASES); // Initialize from constants, which is now empty
+  const [cases, setCases] = useState<Case[]>([]);
   const [activeCase, setActiveCase] = useState<Case | null>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const preferences = loadPreferences();
+  const [theme, setTheme] = useState<'dark' | 'light'>(preferences.theme);
+
+  // Load cases from localStorage on mount
+  useEffect(() => {
+    const savedCases = loadCases();
+    if (savedCases.length > 0) {
+      setCases(savedCases);
+
+      // Load active case
+      const activeCaseId = loadActiveCaseId();
+      if (activeCaseId) {
+        const foundCase = savedCases.find(c => c.id === activeCaseId);
+        if (foundCase) {
+          setActiveCase(foundCase);
+        }
+      }
+    } else {
+      // Initialize with MOCK_CASES only if no saved data
+      setCases(MOCK_CASES);
+    }
+    setIsLoaded(true);
+  }, []);
+
+  // Save cases to localStorage whenever they change
+  useEffect(() => {
+    if (isLoaded) {
+      saveCases(cases);
+    }
+  }, [cases, isLoaded]);
+
+  // Save active case ID whenever it changes
+  useEffect(() => {
+    if (isLoaded) {
+      saveActiveCaseId(activeCase?.id || null);
+    }
+  }, [activeCase, isLoaded]);
 
   const addCase = (newCase: Case) => {
     setCases(prev => [...prev, newCase]);
@@ -125,8 +172,31 @@ const App = () => {
     }
   };
 
+  const updateCase = (id: string, updates: Partial<Case>) => {
+    setCases(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
+    if (activeCase?.id === id) {
+      setActiveCase(prev => prev ? { ...prev, ...updates } : null);
+    }
+  };
+
+  const deleteCase = (id: string) => {
+    setCases(prev => prev.filter(c => c.id !== id));
+    if (activeCase?.id === id) {
+      setActiveCase(null);
+    }
+  };
+
   return (
-    <AppContext.Provider value={{ cases, activeCase, setActiveCase, addCase }}>
+    <AppContext.Provider value={{
+      cases,
+      activeCase,
+      setActiveCase,
+      addCase,
+      updateCase,
+      deleteCase,
+      theme,
+      setTheme
+    }}>
       <HashRouter>
         <Layout>
           <Routes>
