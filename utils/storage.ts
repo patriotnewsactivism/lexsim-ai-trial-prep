@@ -64,7 +64,7 @@ export const saveCases = (cases: Case[]): boolean => {
     localStorage.setItem(STORAGE_KEYS.CASES, JSON.stringify(cases));
     return true;
   } catch (e) {
-    console.error('Failed to save cases:', e);
+    // Silent fail - return false indicates failure
     return false;
   }
 };
@@ -77,7 +77,7 @@ export const loadCases = (): Case[] => {
     const data = localStorage.getItem(STORAGE_KEYS.CASES);
     return data ? JSON.parse(data) : [];
   } catch (e) {
-    console.error('Failed to load cases:', e);
+    // Silent fail - return empty array
     return [];
   }
 };
@@ -90,7 +90,7 @@ export const clearCases = (): boolean => {
     localStorage.removeItem(STORAGE_KEYS.ACTIVE_CASE_ID);
     return true;
   } catch (e) {
-    console.error('Failed to clear cases:', e);
+    // Silent fail - return false indicates failure
     return false;
   }
 };
@@ -107,7 +107,7 @@ export const saveActiveCaseId = (caseId: string | null): boolean => {
     }
     return true;
   } catch (e) {
-    console.error('Failed to save active case ID:', e);
+    // Silent fail - return false indicates failure
     return false;
   }
 };
@@ -118,7 +118,7 @@ export const loadActiveCaseId = (): string | null => {
   try {
     return localStorage.getItem(STORAGE_KEYS.ACTIVE_CASE_ID);
   } catch (e) {
-    console.error('Failed to load active case ID:', e);
+    // Silent fail - return null
     return null;
   }
 };
@@ -133,7 +133,7 @@ export const savePreferences = (preferences: Partial<UserPreferences>): boolean 
     localStorage.setItem(STORAGE_KEYS.USER_PREFERENCES, JSON.stringify(updated));
     return true;
   } catch (e) {
-    console.error('Failed to save preferences:', e);
+    // Silent fail - return false indicates failure
     return false;
   }
 };
@@ -152,7 +152,7 @@ export const loadPreferences = (): UserPreferences => {
     const data = localStorage.getItem(STORAGE_KEYS.USER_PREFERENCES);
     return data ? { ...defaults, ...JSON.parse(data) } : defaults;
   } catch (e) {
-    console.error('Failed to load preferences:', e);
+    // Silent fail - return defaults
     return defaults;
   }
 };
@@ -169,7 +169,7 @@ export const saveTrialSession = (session: TrialSession): boolean => {
     localStorage.setItem(STORAGE_KEYS.TRIAL_SESSIONS, JSON.stringify(trimmed));
     return true;
   } catch (e) {
-    console.error('Failed to save trial session:', e);
+    // Silent fail - return false indicates failure
     return false;
   }
 };
@@ -181,7 +181,7 @@ export const loadTrialSessions = (): TrialSession[] => {
     const data = localStorage.getItem(STORAGE_KEYS.TRIAL_SESSIONS);
     return data ? JSON.parse(data) : [];
   } catch (e) {
-    console.error('Failed to load trial sessions:', e);
+    // Silent fail - return empty array
     return [];
   }
 };
@@ -198,7 +198,7 @@ export const clearTrialSessions = (): boolean => {
     localStorage.removeItem(STORAGE_KEYS.TRIAL_SESSIONS);
     return true;
   } catch (e) {
-    console.error('Failed to clear trial sessions:', e);
+    // Silent fail - return false indicates failure
     return false;
   }
 };
@@ -228,7 +228,7 @@ export const importAllData = (data: any): boolean => {
     }
     return true;
   } catch (e) {
-    console.error('Failed to import data:', e);
+    // Silent fail - return false indicates failure
     return false;
   }
 };
@@ -243,7 +243,7 @@ export const clearAllData = (): boolean => {
     });
     return true;
   } catch (e) {
-    console.error('Failed to clear all data:', e);
+    // Silent fail - return false indicates failure
     return false;
   }
 };

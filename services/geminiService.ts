@@ -1,6 +1,7 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
 import { DocumentType, StrategyInsight, CoachingAnalysis, TrialPhase, SimulationMode } from "../types";
+import { retryWithBackoff, withTimeout } from "../utils/errorHandler";
 
 const apiKey = process.env.API_KEY || '';
 const ai = new GoogleGenAI({ apiKey });
@@ -25,14 +26,14 @@ export const fileToGenerativePart = async (file: File): Promise<{ inlineData: { 
 };
 
 export const analyzeDocument = async (text: string, imagePart?: any) => {
-  try {
+  return retryWithBackoff(async () => {
     const model = imagePart ? 'gemini-2.5-flash' : 'gemini-2.5-flash';
-    const prompt = `Analyze the following legal document content. 
-    Extract: 
+    const prompt = `Analyze the following legal document content.
+    Extract:
     1. A concise summary (max 3 sentences).
     2. Key legal entities (people, organizations, statutes).
     3. A list of potential risks or contradictions found in the text.
-    
+
     Return the response in JSON format.
     `;
 
@@ -40,27 +41,27 @@ export const analyzeDocument = async (text: string, imagePart?: any) => {
     if (imagePart) parts.push(imagePart);
     parts.push({ text: prompt + "\n\nDocument Content:\n" + text });
 
-    const response = await ai.models.generateContent({
-      model: model,
-      contents: { parts },
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            summary: { type: Type.STRING },
-            entities: { type: Type.ARRAY, items: { type: Type.STRING } },
-            risks: { type: Type.ARRAY, items: { type: Type.STRING } }
+    const response = await withTimeout(
+      ai.models.generateContent({
+        model: model,
+        contents: { parts },
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              summary: { type: Type.STRING },
+              entities: { type: Type.ARRAY, items: { type: Type.STRING } },
+              risks: { type: Type.ARRAY, items: { type: Type.STRING } }
+            }
           }
         }
-      }
-    });
+      }),
+      30000 // 30 second timeout
+    );
 
     return JSON.parse(response.text || '{}');
-  } catch (error) {
-    console.error("Document analysis failed", error);
-    throw error;
-  }
+  }, 3); // Retry up to 3 times
 };
 
 export const generateWitnessResponse = async (
@@ -73,7 +74,7 @@ export const generateWitnessResponse = async (
     const systemInstruction = `You are roleplaying as a witness named ${witnessName} in a legal trial.
     Your personality is: ${personality}.
     Case Context: ${caseContext}.
-    
+
     Rules:
     1. Stay in character at all times.
     2. If you are 'hostile', be short, evasive, and defensive.
@@ -96,50 +97,54 @@ export const generateWitnessResponse = async (
     });
 
     const lastMessage = history[history.length - 1].parts[0].text;
-    const response = await chat.sendMessage({ message: lastMessage });
-    
+    const response = await withTimeout(
+      chat.sendMessage({ message: lastMessage }),
+      20000 // 20 second timeout
+    );
+
     return response.text;
 
   } catch (error) {
-    console.error("Witness simulation failed", error);
-    return "I... I need a moment. (Simulation Error)";
+    throw new Error(`Witness simulation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
 
 export const predictStrategy = async (caseSummary: string, opponentProfile: string): Promise<StrategyInsight[]> => {
   try {
     // Using thinking model for complex reasoning
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview',
-      contents: `Analyze this case and the opposing counsel profile.
-      Case: ${caseSummary}
-      Opponent: ${opponentProfile}
-      
-      Provide 3 strategic insights (Risks, Opportunities, or Predictions).
-      Think deeply about the opponent's psychological tendencies and legal history.
-      `,
-      config: {
-        thinkingConfig: { thinkingBudget: 2048 },
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              title: { type: Type.STRING },
-              description: { type: Type.STRING },
-              confidence: { type: Type.NUMBER, description: "0 to 100" },
-              type: { type: Type.STRING, enum: ['risk', 'opportunity', 'prediction'] }
+    const response = await withTimeout(
+      ai.models.generateContent({
+        model: 'gemini-3-pro-preview',
+        contents: `Analyze this case and the opposing counsel profile.
+        Case: ${caseSummary}
+        Opponent: ${opponentProfile}
+
+        Provide 3 strategic insights (Risks, Opportunities, or Predictions).
+        Think deeply about the opponent's psychological tendencies and legal history.
+        `,
+        config: {
+          thinkingConfig: { thinkingBudget: 2048 },
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                title: { type: Type.STRING },
+                description: { type: Type.STRING },
+                confidence: { type: Type.NUMBER, description: "0 to 100" },
+                type: { type: Type.STRING, enum: ['risk', 'opportunity', 'prediction'] }
+              }
             }
           }
         }
-      }
-    });
+      }),
+      45000 // 45 second timeout for thinking model
+    );
 
     return JSON.parse(response.text || '[]');
   } catch (error) {
-    console.error("Strategy prediction failed", error);
-    return [];
+    throw new Error(`Strategy prediction failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
 
@@ -153,7 +158,7 @@ export const generateOpponentResponse = async (
     const systemInstruction = `You are ${opponentName}, opposing counsel in a trial.
     Style: ${opponentStyle}.
     Case Context: ${caseContext}.
-    
+
     Rules:
     1. Argue effectively against the user's points.
     2. Be professional but adversarial.
@@ -174,13 +179,15 @@ export const generateOpponentResponse = async (
     });
 
     const lastMessage = formattedHistory[formattedHistory.length - 1].parts[0].text;
-    const response = await chat.sendMessage({ message: lastMessage });
-    
+    const response = await withTimeout(
+      chat.sendMessage({ message: lastMessage }),
+      20000 // 20 second timeout
+    );
+
     return response.text;
 
   } catch (error) {
-    console.error("Opponent simulation failed", error);
-    return "Objection! (System Error)";
+    throw new Error(`Opponent simulation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
 
@@ -190,43 +197,46 @@ export const getCoachingTip = async (
   caseContext: string
 ): Promise<CoachingAnalysis | null> => {
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: `You are a senior legal strategist coaching a junior attorney during a mock argument.
-      
-      Context: ${caseContext}
-      
-      The exchange just happened:
-      Attorney (User): "${lastUserMessage}"
-      Opposing Counsel: "${lastOpponentMessage}"
-      
-      Provide a JSON response with:
-      1. "critique": A 1-sentence critique of the user's last argument.
-      2. "suggestion": A short tip on what to say or do next.
-      3. "sampleResponse": A recommended strong rebuttal string.
-      4. "fallaciesIdentified": A list of any logical fallacies committed by EITHER the user or the opponent (e.g., Ad Hominem, Straw Man, Red Herring, False Equivalence). If none, return empty list.
-      5. "rhetoricalEffectiveness": A score from 0-100 of how persuasive and rhetorically sound the user's argument was.
-      6. "rhetoricalFeedback": A brief comment on tone, pacing, or persuasive impact (e.g. "Tone was too defensive", "Great use of ethos").
-      `,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            critique: { type: Type.STRING },
-            suggestion: { type: Type.STRING },
-            sampleResponse: { type: Type.STRING },
-            fallaciesIdentified: { type: Type.ARRAY, items: { type: Type.STRING } },
-            rhetoricalEffectiveness: { type: Type.NUMBER },
-            rhetoricalFeedback: { type: Type.STRING },
+    const response = await withTimeout(
+      ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: `You are a senior legal strategist coaching a junior attorney during a mock argument.
+
+        Context: ${caseContext}
+
+        The exchange just happened:
+        Attorney (User): "${lastUserMessage}"
+        Opposing Counsel: "${lastOpponentMessage}"
+
+        Provide a JSON response with:
+        1. "critique": A 1-sentence critique of the user's last argument.
+        2. "suggestion": A short tip on what to say or do next.
+        3. "sampleResponse": A recommended strong rebuttal string.
+        4. "fallaciesIdentified": A list of any logical fallacies committed by EITHER the user or the opponent (e.g., Ad Hominem, Straw Man, Red Herring, False Equivalence). If none, return empty list.
+        5. "rhetoricalEffectiveness": A score from 0-100 of how persuasive and rhetorically sound the user's argument was.
+        6. "rhetoricalFeedback": A brief comment on tone, pacing, or persuasive impact (e.g. "Tone was too defensive", "Great use of ethos").
+        `,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              critique: { type: Type.STRING },
+              suggestion: { type: Type.STRING },
+              sampleResponse: { type: Type.STRING },
+              fallaciesIdentified: { type: Type.ARRAY, items: { type: Type.STRING } },
+              rhetoricalEffectiveness: { type: Type.NUMBER },
+              rhetoricalFeedback: { type: Type.STRING },
+            }
           }
         }
-      }
-    });
+      }),
+      20000 // 20 second timeout
+    );
 
     return JSON.parse(response.text || '{}');
   } catch (error) {
-    console.error("Coaching failed", error);
+    // Return null for coaching failures - it's not critical
     return null;
   }
 };
