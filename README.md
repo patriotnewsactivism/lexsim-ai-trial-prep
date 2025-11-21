@@ -77,7 +77,7 @@
 - **AI**: Google Gemini AI
   - `gemini-2.5-flash` - Fast responses for chat and simulation
   - `gemini-3-pro-preview` - Deep reasoning with thinking models
-  - `gemini-2.5-flash-live` - Real-time audio interaction
+  - `gemini-live-2.5-flash-preview` - Real-time audio interaction
 - **Icons**: Lucide React
 
 ## Getting Started

@@ -218,7 +218,7 @@ const TrialSim = () => {
       const systemInstruction = getTrialSimSystemInstruction(phase, mode, opponentName, activeCase.summary);
 
       const sessionPromise = ai.live.connect({
-        model: 'gemini-2.5-flash-live',
+        model: 'gemini-live-2.5-flash-preview',
         config: {
           responseModalities: [Modality.AUDIO],
           speechConfig: {
@@ -226,8 +226,8 @@ const TrialSim = () => {
           },
           systemInstruction: systemInstruction,
           tools: [{ functionDeclarations: [coachingTool, objectionTool] }],
-          inputAudioTranscription: { model: "gemini-2.5-flash-live" },
-          outputAudioTranscription: { model: "gemini-2.5-flash-live" },
+          inputAudioTranscription: {},
+          outputAudioTranscription: {},
         },
         callbacks: {
           onopen: () => {

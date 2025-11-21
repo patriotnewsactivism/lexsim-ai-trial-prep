@@ -141,7 +141,7 @@ Strategy analysis uses `thinkingConfig: { thinkingBudget: 2048 }` for deep reaso
 **Live API Audio:**
 - Input: PCM 16kHz mono audio from microphone
 - Output: Base64-encoded PCM audio decoded to AudioBuffer
-- Connection managed via `ai.live.connect({ model: 'gemini-2.5-flash-live' })`
+- Connection managed via `ai.live.connect({ model: 'gemini-live-2.5-flash-preview' })`
 
 ### Image/Document Upload
 - `fileToGenerativePart` converts File to base64 inline data for Gemini
