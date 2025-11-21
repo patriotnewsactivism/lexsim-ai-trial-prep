@@ -9,6 +9,8 @@ import StrategyRoom from './components/StrategyRoom';
 import ArgumentPractice from './components/ArgumentPractice';
 import DraftingAssistant from './components/DraftingAssistant';
 import SettingsPage from './components/Settings';
+import SessionHistory from './components/SessionHistory';
+import MockJury from './components/MockJury';
 import { MOCK_CASES } from './constants';
 import { Case } from './types';
 import { loadCases, saveCases, loadActiveCaseId, saveActiveCaseId, loadPreferences } from './utils/storage';
@@ -59,6 +61,8 @@ const Sidebar = ({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: (v: boolea
           <NavItem path="/" icon={LayoutDashboard} label="Dashboard" />
           <NavItem path="/cases" icon={Gavel} label="Case Files" />
           <NavItem path="/practice" icon={Mic} label="Trial Simulator" />
+          <NavItem path="/sessions" icon={MessageSquare} label="Session History" />
+          <NavItem path="/jury" icon={Users} label="Mock Jury" />
           <NavItem path="/witness-lab" icon={Users} label="Witness Lab" />
           <NavItem path="/strategy" icon={BrainCircuit} label="Strategy & AI" />
           <NavItem path="/docs" icon={FileText} label="Drafting Assistant" />
@@ -204,6 +208,8 @@ const App = () => {
             <Route path="/cases" element={<CaseManager />} />
             <Route path="/witness-lab" element={<WitnessLab />} />
             <Route path="/practice" element={<ArgumentPractice />} />
+            <Route path="/sessions" element={<SessionHistory />} />
+            <Route path="/jury" element={<MockJury />} />
             <Route path="/strategy" element={<StrategyRoom />} />
             <Route path="/docs" element={<DraftingAssistant />} />
             <Route path="/settings" element={<SettingsPage />} />

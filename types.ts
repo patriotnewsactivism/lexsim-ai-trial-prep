@@ -90,3 +90,56 @@ export interface CoachingAnalysis {
   rhetoricalFeedback: string; // Brief comment on tone/persuasion
   teleprompterScript?: string; // New field for providing text to read/reference
 }
+
+export interface TrialSession {
+  id: string;
+  caseId: string;
+  caseTitle: string;
+  phase: TrialPhase;
+  mode: SimulationMode;
+  date: string;
+  duration: number; // seconds
+  transcript: Message[];
+  audioUrl?: string; // blob URL or base64
+  score?: number; // 0-100 overall performance
+  metrics?: {
+    objectionsReceived: number;
+    fallaciesCommitted: number;
+    avgRhetoricalScore: number;
+    wordCount: number;
+    fillerWordsCount: number;
+  };
+  feedback?: string;
+}
+
+export interface Juror {
+  id: string;
+  name: string;
+  age: number;
+  occupation: string;
+  education: string;
+  background: string;
+  biases?: string[];
+  leaningScore: number; // -100 (defense) to +100 (prosecution)
+  avatar: string;
+}
+
+export interface JuryDeliberation {
+  jurорId: string;
+  statement: string;
+  timestamp: number;
+  leaningChange?: number; // How much this statement affected others
+}
+
+export interface JuryVerdict {
+  verdict: 'guilty' | 'not guilty' | 'hung';
+  confidence: number; // 0-100
+  voteTally: {
+    guilty: number;
+    notGuilty: number;
+  };
+  reasoning: string;
+  dissenting?: string[]; // Juror IDs who dissented
+  weakness: string[]; // Weaknesses in your case identified by jury
+  strengths: string[]; // Strengths in your case
+}
