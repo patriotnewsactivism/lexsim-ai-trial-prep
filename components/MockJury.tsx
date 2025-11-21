@@ -339,7 +339,7 @@ Return JSON with:
                 value={openingStatement}
                 onChange={(e) => setOpeningStatement(e.target.value)}
                 placeholder="Enter your opening statement to the jury... Introduce your case, preview the evidence, and establish your narrative."
-                className="w-full h-48 px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-gold-500 resize-none"
+                className="w-full h-40 sm:h-48 px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-gold-500 resize-none"
               />
             </div>
 
@@ -349,7 +349,7 @@ Return JSON with:
                 value={closingArgument}
                 onChange={(e) => setClosingArgument(e.target.value)}
                 placeholder="Enter your closing argument... Summarize the evidence, address weaknesses, and make your final appeal to the jury."
-                className="w-full h-48 px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-gold-500 resize-none"
+                className="w-full h-40 sm:h-48 px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-gold-500 resize-none"
               />
             </div>
           </div>
@@ -385,7 +385,7 @@ Return JSON with:
                 Jury Deliberation Room
               </h2>
             </div>
-            <div ref={deliberationRef} className="p-6 space-y-4 max-h-[600px] overflow-y-auto">
+            <div ref={deliberationRef} className="p-4 md:p-6 space-y-4 max-h-[400px] sm:max-h-[600px] overflow-y-auto">
               {deliberations.map((delib, i) => {
                 const juror = getJurorById(delib.jurorId);
                 return (

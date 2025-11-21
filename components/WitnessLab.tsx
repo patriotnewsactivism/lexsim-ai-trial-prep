@@ -3,7 +3,7 @@ import { MOCK_WITNESSES } from '../constants';
 import { AppContext } from '../App';
 import { generateWitnessResponse } from '../services/geminiService';
 import { Message, Witness } from '../types';
-import { Send, Mic, User, ShieldAlert, HeartPulse } from 'lucide-react';
+import { Send, Mic, User, ShieldAlert, HeartPulse, ChevronDown } from 'lucide-react';
 
 const WitnessLab = () => {
   const { activeCase } = useContext(AppContext);
@@ -13,6 +13,7 @@ const WitnessLab = () => {
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [showMobileWitnessSelector, setShowMobileWitnessSelector] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -68,9 +69,9 @@ const WitnessLab = () => {
   };
 
   return (
-    <div className="h-[calc(100vh-8rem)] flex gap-6">
+    <div className="min-h-[500px] md:h-[calc(100vh-8rem)] flex flex-col md:flex-row gap-4 md:gap-6">
       {/* Sidebar: Witness Selection */}
-      <div className="w-72 flex flex-col gap-4 bg-slate-800 border border-slate-700 rounded-xl p-4 overflow-y-auto hidden md:flex">
+      <div className="w-full md:w-72 flex flex-col gap-4 bg-slate-800 border border-slate-700 rounded-xl p-4 overflow-y-auto hidden md:flex">
         <h3 className="text-white font-serif font-bold px-2">Witness List</h3>
         {MOCK_WITNESSES.map(w => (
           <button
@@ -93,23 +94,31 @@ const WitnessLab = () => {
       {/* Chat Area */}
       <div className="flex-1 flex flex-col bg-slate-900 border border-slate-700 rounded-xl overflow-hidden relative">
         {/* Chat Header */}
-        <div className="h-16 bg-slate-800 border-b border-slate-700 flex items-center px-6 justify-between">
-          <div className="flex items-center gap-3">
+        <div className="h-16 bg-slate-800 border-b border-slate-700 flex items-center px-4 md:px-6 justify-between">
+          <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
             <div className="relative">
               <img src={selectedWitness.avatarUrl} alt="Active" className="w-10 h-10 rounded-full object-cover border-2 border-gold-500" />
               <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-slate-800"></div>
             </div>
-            <div>
-              <h2 className="text-white font-semibold">{selectedWitness.name}</h2>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <h2 className="text-white font-semibold truncate">{selectedWitness.name}</h2>
+                <button
+                  onClick={() => setShowMobileWitnessSelector(!showMobileWitnessSelector)}
+                  className="md:hidden p-1 text-slate-400 hover:text-white"
+                >
+                  <ChevronDown size={18} />
+                </button>
+              </div>
               <p className="text-xs text-slate-400 flex items-center gap-2">
                 <span className="capitalize">{selectedWitness.personality}</span>
-                <span>•</span>
-                <span>Credibility: {selectedWitness.credibilityScore}%</span>
+                <span className="hidden sm:inline">•</span>
+                <span className="hidden sm:inline">Credibility: {selectedWitness.credibilityScore}%</span>
               </p>
             </div>
           </div>
-          
-          <div className="flex items-center gap-4 text-slate-400 text-xs">
+
+          <div className="hidden sm:flex items-center gap-4 text-slate-400 text-xs">
             <div className="flex items-center gap-1">
                <HeartPulse size={14} className={selectedWitness.personality === 'Nervous' ? 'text-red-400 animate-pulse' : 'text-green-400'} />
                Stress Level
@@ -121,8 +130,36 @@ const WitnessLab = () => {
           </div>
         </div>
 
+        {/* Mobile Witness Selector Dropdown */}
+        {showMobileWitnessSelector && (
+          <div className="md:hidden bg-slate-800 border-b border-slate-700 max-h-64 overflow-y-auto">
+            {MOCK_WITNESSES.map(w => (
+              <button
+                key={w.id}
+                onClick={() => {
+                  setSelectedWitness(w);
+                  setMessages([{ id: '0', sender: 'system', text: `Simulation with ${w.name} started.`, timestamp: Date.now() }]);
+                  setShowMobileWitnessSelector(false);
+                }}
+                className={`w-full flex items-center gap-3 p-3 border-b border-slate-700/50 transition-colors text-left ${
+                  selectedWitness.id === w.id ? 'bg-slate-700' : 'hover:bg-slate-700/50'
+                }`}
+              >
+                <img src={w.avatarUrl} alt={w.name} className="w-10 h-10 rounded-full object-cover border border-slate-600" />
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-white">{w.name}</p>
+                  <p className="text-xs text-slate-400">{w.role}</p>
+                </div>
+                {selectedWitness.id === w.id && (
+                  <div className="w-2 h-2 rounded-full bg-gold-500" />
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 md:space-y-6 custom-scrollbar">
           {messages.map((msg) => {
             const isUser = msg.sender === 'user';
             const isSystem = msg.sender === 'system';
@@ -137,12 +174,12 @@ const WitnessLab = () => {
 
             return (
               <div key={msg.id} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[75%] rounded-2xl px-5 py-3 ${
-                  isUser 
-                    ? 'bg-blue-600 text-white rounded-br-none' 
+                <div className={`max-w-[85%] sm:max-w-[75%] rounded-2xl px-4 sm:px-5 py-3 ${
+                  isUser
+                    ? 'bg-blue-600 text-white rounded-br-none'
                     : 'bg-slate-800 text-slate-200 border border-slate-700 rounded-bl-none'
                 }`}>
-                  <p className="text-sm leading-relaxed">{msg.text}</p>
+                  <p className="text-sm sm:text-base leading-relaxed">{msg.text}</p>
                 </div>
               </div>
             );
@@ -160,23 +197,23 @@ const WitnessLab = () => {
         </div>
 
         {/* Input Area */}
-        <div className="bg-slate-800 border-t border-slate-700 p-4">
-          <form onSubmit={handleSendMessage} className="flex gap-2 items-center bg-slate-900 border border-slate-600 rounded-xl p-1 pr-2 focus-within:border-gold-500 focus-within:ring-1 focus-within:ring-gold-500 transition-all">
+        <div className="bg-slate-800 border-t border-slate-700 p-3 md:p-4">
+          <form onSubmit={handleSendMessage} className="flex gap-1 sm:gap-2 items-center bg-slate-900 border border-slate-600 rounded-xl p-1 pr-2 focus-within:border-gold-500 focus-within:ring-1 focus-within:ring-gold-500 transition-all">
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask your question..."
-              className="flex-1 bg-transparent border-none focus:ring-0 text-white px-4 py-3 placeholder-slate-500"
+              className="flex-1 bg-transparent border-none focus:ring-0 text-white px-3 md:px-4 py-3 placeholder-slate-500 text-sm sm:text-base min-h-[44px]"
               disabled={isTyping}
             />
-            <button type="button" className="p-2 text-slate-400 hover:text-white transition-colors">
+            <button type="button" className="p-2 text-slate-400 hover:text-white transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center">
               <Mic size={20} />
             </button>
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={!input.trim() || isTyping}
-              className="p-2 bg-gold-600 hover:bg-gold-500 text-slate-900 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="p-2 bg-gold-600 hover:bg-gold-500 text-slate-900 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-w-[44px] min-h-[44px] flex items-center justify-center"
             >
               <Send size={20} />
             </button>

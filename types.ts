@@ -143,3 +143,30 @@ export interface JuryVerdict {
   weakness: string[]; // Weaknesses in your case identified by jury
   strengths: string[]; // Strengths in your case
 }
+
+export interface TimelineEvent {
+  id: string;
+  date: string;
+  time?: string;
+  title: string;
+  description: string;
+  type: 'incident' | 'evidence' | 'witness' | 'filing' | 'hearing' | 'other';
+  linkedEvidence?: string[]; // IDs of related evidence/documents
+  linkedWitnesses?: string[]; // IDs of related witnesses
+  importance: 'low' | 'medium' | 'high' | 'critical';
+  tags?: string[];
+}
+
+export interface Evidence {
+  id: string;
+  exhibitNumber?: string; // e.g., "Plaintiff Ex. 1" or "Defense Ex. A"
+  name: string;
+  type: DocumentType;
+  description: string;
+  dateObtained: string;
+  source?: string;
+  linkedTo?: string[]; // IDs of timeline events or witnesses
+  tags?: string[];
+  status: 'pending' | 'admitted' | 'excluded' | 'challenged';
+  notes?: string;
+}

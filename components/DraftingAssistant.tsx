@@ -223,7 +223,7 @@ Generate the complete document ready for attorney review.`;
             </div>
 
             {/* Template Grid */}
-            <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
+            <div className="space-y-2 max-h-64 sm:max-h-96 overflow-y-auto pr-2">
               {filteredTemplates.map(template => (
                 <button
                   key={template.id}
@@ -318,7 +318,7 @@ Generate the complete document ready for attorney review.`;
           )}
 
           {/* Generated Content Display */}
-          <div className="bg-slate-800 border border-slate-700 rounded-lg p-6 min-h-[500px] max-h-[600px] overflow-y-auto">
+          <div className="bg-slate-800 border border-slate-700 rounded-lg p-4 md:p-6 min-h-[300px] sm:min-h-[500px] max-h-[500px] sm:max-h-[600px] overflow-y-auto">
             {generatedContent ? (
               <div className="prose prose-invert prose-sm max-w-none">
                 <pre className="whitespace-pre-wrap font-mono text-sm text-slate-200 leading-relaxed">

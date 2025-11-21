@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { HashRouter, Routes, Route, Navigate, useLocation, Link } from 'react-router-dom';
-import { LayoutDashboard, Scale, FileText, Users, BrainCircuit, Gavel, Settings, Menu, X, MessageSquare, Mic } from 'lucide-react';
+import { LayoutDashboard, Scale, FileText, Users, BrainCircuit, Gavel, Settings, Menu, X, MessageSquare, Mic, Calendar } from 'lucide-react';
 import Dashboard from './components/Dashboard';
 import CaseManager from './components/CaseManager';
 import WitnessLab from './components/WitnessLab';
@@ -11,6 +11,7 @@ import DraftingAssistant from './components/DraftingAssistant';
 import SettingsPage from './components/Settings';
 import SessionHistory from './components/SessionHistory';
 import MockJury from './components/MockJury';
+import EvidenceTimeline from './components/EvidenceTimeline';
 import { MOCK_CASES } from './constants';
 import { Case } from './types';
 import { loadCases, saveCases, loadActiveCaseId, saveActiveCaseId, loadPreferences } from './utils/storage';
@@ -63,6 +64,7 @@ const Sidebar = ({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: (v: boolea
           <NavItem path="/practice" icon={Mic} label="Trial Simulator" />
           <NavItem path="/sessions" icon={MessageSquare} label="Session History" />
           <NavItem path="/jury" icon={Users} label="Mock Jury" />
+          <NavItem path="/timeline" icon={Calendar} label="Evidence Timeline" />
           <NavItem path="/witness-lab" icon={Users} label="Witness Lab" />
           <NavItem path="/strategy" icon={BrainCircuit} label="Strategy & AI" />
           <NavItem path="/docs" icon={FileText} label="Drafting Assistant" />
@@ -210,6 +212,7 @@ const App = () => {
             <Route path="/practice" element={<ArgumentPractice />} />
             <Route path="/sessions" element={<SessionHistory />} />
             <Route path="/jury" element={<MockJury />} />
+            <Route path="/timeline" element={<EvidenceTimeline />} />
             <Route path="/strategy" element={<StrategyRoom />} />
             <Route path="/docs" element={<DraftingAssistant />} />
             <Route path="/settings" element={<SettingsPage />} />

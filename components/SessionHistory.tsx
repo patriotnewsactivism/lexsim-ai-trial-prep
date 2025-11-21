@@ -121,21 +121,21 @@ ${transcript}
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white font-serif">Session History</h1>
-          <p className="text-slate-400 mt-2">Review your past trial simulation sessions and track improvement</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-white font-serif">Session History</h1>
+          <p className="text-slate-400 mt-2 text-sm sm:text-base">Review your past trial simulation sessions and track improvement</p>
         </div>
         <Link
           to="/practice"
-          className="bg-gold-500 hover:bg-gold-600 text-slate-900 font-semibold px-4 py-2 rounded-lg transition-colors"
+          className="bg-gold-500 hover:bg-gold-600 text-slate-900 font-semibold px-4 py-2 rounded-lg transition-colors whitespace-nowrap"
         >
           New Session
         </Link>
       </div>
 
       {/* Filter */}
-      <div className="flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
         <Filter className="text-slate-400" size={20} />
         <select
           value={filterCaseId}
@@ -165,7 +165,7 @@ ${transcript}
       ) : (
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Sessions List */}
-          <div className="lg:col-span-1 space-y-3 max-h-[600px] overflow-y-auto pr-2">
+          <div className="lg:col-span-1 space-y-3 max-h-[400px] sm:max-h-[600px] overflow-y-auto pr-2">
             {filteredSessions.map(session => (
               <button
                 key={session.id}
@@ -232,21 +232,21 @@ ${transcript}
                 </div>
 
                 {/* Metrics */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-6 bg-slate-900/50">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 md:p-6 bg-slate-900/50">
                   <div className="text-center">
-                    <p className="text-2xl font-bold text-white">{selectedSession.metrics?.objectionsReceived || 0}</p>
+                    <p className="text-xl md:text-2xl font-bold text-white">{selectedSession.metrics?.objectionsReceived || 0}</p>
                     <p className="text-xs text-slate-400 mt-1">Objections</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-2xl font-bold text-white">{selectedSession.metrics?.fallaciesCommitted || 0}</p>
+                    <p className="text-xl md:text-2xl font-bold text-white">{selectedSession.metrics?.fallaciesCommitted || 0}</p>
                     <p className="text-xs text-slate-400 mt-1">Fallacies</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-2xl font-bold text-white">{selectedSession.metrics?.avgRhetoricalScore || 0}</p>
+                    <p className="text-xl md:text-2xl font-bold text-white">{selectedSession.metrics?.avgRhetoricalScore || 0}</p>
                     <p className="text-xs text-slate-400 mt-1">Rhetoric Score</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-2xl font-bold text-white">{selectedSession.metrics?.wordCount || 0}</p>
+                    <p className="text-xl md:text-2xl font-bold text-white">{selectedSession.metrics?.wordCount || 0}</p>
                     <p className="text-xs text-slate-400 mt-1">Words Spoken</p>
                   </div>
                 </div>
@@ -304,7 +304,7 @@ ${transcript}
                       Download
                     </button>
                   </div>
-                  <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
+                  <div className="space-y-3 max-h-64 sm:max-h-96 overflow-y-auto pr-2">
                     {selectedSession.transcript.map(msg => (
                       <div
                         key={msg.id}
