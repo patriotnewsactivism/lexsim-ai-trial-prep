@@ -7,6 +7,8 @@ import CaseManager from './components/CaseManager';
 import WitnessLab from './components/WitnessLab';
 import StrategyRoom from './components/StrategyRoom';
 import ArgumentPractice from './components/ArgumentPractice';
+import DraftingAssistant from './components/DraftingAssistant';
+import SettingsPage from './components/Settings';
 import { MOCK_CASES } from './constants';
 import { Case } from './types';
 
@@ -133,6 +135,8 @@ const App = () => {
             <Route path="/witness-lab" element={<WitnessLab />} />
             <Route path="/practice" element={<ArgumentPractice />} />
             <Route path="/strategy" element={<StrategyRoom />} />
+            <Route path="/docs" element={<DraftingAssistant />} />
+            <Route path="/settings" element={<SettingsPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Layout>
