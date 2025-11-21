@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Voice API Test</title>
+    <style>
+        body { font-family: Arial; padding: 20px; max-width: 800px; margin: 0 auto; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button { padding: 10px 20px; margin: 5px; font-size: 16px; cursor: pointer; }
+        #console { background: #000; color: #0f0; padding: 15px; font-family: monospace; height: 300px; overflow-y: scroll; }
+        .log { margin: 2px 0; }
+    </style>
+</head>
+<body>
+    <h1>🎤 Gemini Live API Voice Test</h1>
+
+    <div id="status" class="status info">Ready to test...</div>
+
+    <button onclick="testConnection()">1. Test API Connection</button>
+    <button onclick="testMicrophone()">2. Test Microphone</button>
+    <button onclick="testLiveAPI()">3. Test Live API with Audio</button>
+    <button onclick="clearConsole()">Clear Console</button>
+
+    <h3>Console Output:</h3>
+    <div id="console"></div>
+
+    <script type="module">
+        import { GoogleGenAI, Modality, Type } from 'https://esm.sh/@google/genai@1.30.0';
+
+        const API_KEY = 'AIzaSyC3-AOCPRBO71yshTruwTgTNrg_5GY9pKs';
+
+        function log(msg, type = 'info') {
+            const console = document.getElementById('console');
+            const entry = document.createElement('div');
+            entry.className = 'log';
+            entry.style.color = type === 'error' ? '#f88' : type === 'success' ? '#8f8' : '#0f0';
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            console.appendChild(entry);
+            console.scrollTop = console.scrollHeight;
+        }
+
+        function setStatus(msg, type) {
+            const status = document.getElementById('status');
+            status.textContent = msg;
+            status.className = `status ${type}`;
+        }
+
+        window.clearConsole = () => {
+            document.getElementById('console').innerHTML = '';
+        };
+
+        window.testConnection = async () => {
+            log('Testing API connection...');
+            setStatus('Testing API connection...', 'info');
+
+            try {
+                const ai = new GoogleGenAI({ apiKey: API_KEY });
+                log('✅ GoogleGenAI initialized', 'success');
+
+                const response = await ai.models.generateContent({
+                    model: 'gemini-2.5-flash',
+                    contents: 'Say "API works!"'
+                });
+
+                log(`✅ API Response: ${response.text}`, 'success');
+                setStatus('✅ API Connection Working!', 'success');
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+                setStatus(`❌ API Error: ${error.message}`, 'error');
+            }
+        };
+
+        window.testMicrophone = async () => {
+            log('Testing microphone access...');
+            setStatus('Requesting microphone permission...', 'info');
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        channelCount: 1,
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true,
+                        sampleRate: 16000
+                    }
+                });
+
+                log('✅ Microphone access granted', 'success');
+                log(`Audio tracks: ${stream.getAudioTracks().length}`, 'success');
+
+                stream.getTracks().forEach(track => {
+                    log(`Track: ${track.label} (${track.kind})`, 'info');
+                    track.stop();
+                });
+
+                setStatus('✅ Microphone Working!', 'success');
+            } catch (error) {
+                log(`❌ Microphone Error: ${error.message}`, 'error');
+                setStatus(`❌ Microphone Error: ${error.message}`, 'error');
+            }
+        };
+
+        window.testLiveAPI = async () => {
+            log('Testing Gemini Live API...');
+            setStatus('Connecting to Live API...', 'info');
+
+            try {
+                const ai = new GoogleGenAI({ apiKey: API_KEY });
+                log('Initializing Live API connection...');
+
+                let connected = false;
+                let errored = false;
+
+                const session = await ai.live.connect({
+                    model: 'gemini-live-2.5-flash-preview',
+                    config: {
+                        responseModalities: [Modality.AUDIO],
+                    },
+                    callbacks: {
+                        onopen: () => {
+                            connected = true;
+                            log('✅ Live API Connected!', 'success');
+                            setStatus('✅ Live API Connected!', 'success');
+
+                            // Send test message
+                            session.send({ text: 'Say hello!' });
+                            log('Sent test message: "Say hello!"');
+
+                            setTimeout(() => {
+                                session.close();
+                                log('Session closed after 3 seconds');
+                            }, 3000);
+                        },
+                        onmessage: (msg) => {
+                            log(`📨 Message received: ${JSON.stringify(msg).substring(0, 200)}...`);
+
+                            if (msg.serverContent?.outputTranscription) {
+                                log(`🗣️ AI said: "${msg.serverContent.outputTranscription.text}"`, 'success');
+                            }
+
+                            if (msg.serverContent?.modelTurn?.parts?.[0]?.inlineData) {
+                                log('🔊 Audio data received!', 'success');
+                            }
+                        },
+                        onerror: (e) => {
+                            errored = true;
+                            log(`❌ Live API Error: ${e.message || JSON.stringify(e)}`, 'error');
+                            setStatus(`❌ Live API Error: ${e.message}`, 'error');
+                        },
+                        onclose: (e) => {
+                            log(`Connection closed. Code: ${e.code}, Reason: ${e.reason}`);
+                            if (!connected && !errored) {
+                                setStatus('❌ Connection failed to establish', 'error');
+                            }
+                        }
+                    }
+                });
+
+                log('Session object created, waiting for connection...');
+
+            } catch (error) {
+                log(`❌ Failed to create session: ${error.message}`, 'error');
+                log(`Stack: ${error.stack}`, 'error');
+                setStatus(`❌ Session Error: ${error.message}`, 'error');
+            }
+        };
+
+        log('Test page loaded. Click buttons above to test.');
+    </script>
+</body>
+</html>

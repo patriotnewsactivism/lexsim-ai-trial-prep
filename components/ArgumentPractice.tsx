@@ -231,18 +231,9 @@ const TrialSim = () => {
         },
         callbacks: {
           onopen: () => {
-            console.log("Live Connected");
+            console.log("✅ Live API Connected Successfully!");
             setIsLive(true);
             setIsConnecting(false);
-
-            // Send initial "Start" signal
-            sessionPromise.then(session => session.sendToolResponse({
-                functionResponses: {
-                    name: 'initial_context_trigger',
-                    id: 'init',
-                    response: { status: 'ready' }
-                }
-            }));
 
             // Audio Processing - Use 4096 buffer for better stability (less dropouts)
             const source = inputCtx.createMediaStreamSource(stream);
@@ -255,15 +246,21 @@ const TrialSim = () => {
               setLiveVolume(Math.sqrt(sum / inputData.length) * 100);
 
               const pcmBlob = createBlob(inputData);
-              sessionPromise.then(s => s.sendRealtimeInput({ media: pcmBlob }));
+              sessionPromise.then(s => s.sendRealtimeInput({ media: pcmBlob })).catch(err => {
+                console.error("Error sending audio:", err);
+              });
             };
             source.connect(scriptProcessor);
             scriptProcessor.connect(inputCtx.destination);
+            console.log("🎤 Audio processing started");
           },
           onmessage: async (msg: LiveServerMessage) => {
+             console.log("📨 Message received:", msg);
+
              // Audio Output
              const audioData = msg.serverContent?.modelTurn?.parts?.[0]?.inlineData?.data;
              if (audioData) {
+                console.log("🔊 Playing audio response");
                 if (outputCtx.state === 'suspended') await outputCtx.resume();
                 nextStartTimeRef.current = Math.max(nextStartTimeRef.current, outputCtx.currentTime);
                 const audioBuffer = await decodeAudioData(decode(audioData), outputCtx, 24000, 1);
@@ -277,8 +274,14 @@ const TrialSim = () => {
              }
 
              // Transcription
-             if (msg.serverContent?.inputTranscription) currentInputTranscription.current += msg.serverContent.inputTranscription.text;
-             if (msg.serverContent?.outputTranscription) currentOutputTranscription.current += msg.serverContent.outputTranscription.text;
+             if (msg.serverContent?.inputTranscription) {
+               console.log("🎤 User said:", msg.serverContent.inputTranscription.text);
+               currentInputTranscription.current += msg.serverContent.inputTranscription.text;
+             }
+             if (msg.serverContent?.outputTranscription) {
+               console.log("🤖 AI said:", msg.serverContent.outputTranscription.text);
+               currentOutputTranscription.current += msg.serverContent.outputTranscription.text;
+             }
 
              if (msg.serverContent?.turnComplete) {
                  if (currentInputTranscription.current.trim()) {
@@ -333,9 +336,13 @@ const TrialSim = () => {
                  }
              }
           },
-          onclose: () => stopLiveSession(),
+          onclose: (e) => {
+            console.log("Connection closed:", e.code, e.reason);
+            stopLiveSession();
+          },
           onerror: (e) => {
-              console.error(e);
+              console.error("❌ Live API Error:", e);
+              alert(`Live API Error: ${e.message || 'Unknown error. Check console for details.'}`);
               stopLiveSession();
           }
         }
