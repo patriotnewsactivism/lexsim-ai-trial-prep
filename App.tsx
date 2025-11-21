@@ -1,6 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { HashRouter, Routes, Route, Navigate, useLocation, Link } from 'react-router-dom';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import { LayoutDashboard, Scale, FileText, Users, BrainCircuit, Gavel, Settings, Menu, X, MessageSquare, Mic, Calendar } from 'lucide-react';
 import Dashboard from './components/Dashboard';
 import CaseManager from './components/CaseManager';
@@ -13,6 +15,7 @@ import SessionHistory from './components/SessionHistory';
 import MockJury from './components/MockJury';
 import EvidenceTimeline from './components/EvidenceTimeline';
 import LandingPage from './components/LandingPage';
+import ErrorBoundary from './components/ErrorBoundary';
 import { MOCK_CASES } from './constants';
 import { Case } from './types';
 import { loadCases, saveCases, loadActiveCaseId, saveActiveCaseId, loadPreferences } from './utils/storage';
@@ -194,36 +197,52 @@ const App = () => {
   };
 
   return (
-    <AppContext.Provider value={{
-      cases,
-      activeCase,
-      setActiveCase,
-      addCase,
-      updateCase,
-      deleteCase,
-      theme,
-      setTheme
-    }}>
-      <HashRouter>
-        <Routes>
-          {/* Landing page without app layout */}
-          <Route path="/landing" element={<LandingPage />} />
+    <ErrorBoundary>
+      <AppContext.Provider value={{
+        cases,
+        activeCase,
+        setActiveCase,
+        addCase,
+        updateCase,
+        deleteCase,
+        theme,
+        setTheme
+      }}>
+        <HashRouter>
+          <Routes>
+            {/* Landing page without app layout */}
+            <Route path="/landing" element={<LandingPage />} />
 
-          {/* App routes with layout */}
-          <Route path="/" element={<Layout><Dashboard /></Layout>} />
-          <Route path="/cases" element={<Layout><CaseManager /></Layout>} />
-          <Route path="/witness-lab" element={<Layout><WitnessLab /></Layout>} />
-          <Route path="/practice" element={<Layout><ArgumentPractice /></Layout>} />
-          <Route path="/sessions" element={<Layout><SessionHistory /></Layout>} />
-          <Route path="/jury" element={<Layout><MockJury /></Layout>} />
-          <Route path="/timeline" element={<Layout><EvidenceTimeline /></Layout>} />
-          <Route path="/strategy" element={<Layout><StrategyRoom /></Layout>} />
-          <Route path="/docs" element={<Layout><DraftingAssistant /></Layout>} />
-          <Route path="/settings" element={<Layout><SettingsPage /></Layout>} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </HashRouter>
-    </AppContext.Provider>
+            {/* App routes with layout */}
+            <Route path="/" element={<Layout><Dashboard /></Layout>} />
+            <Route path="/cases" element={<Layout><CaseManager /></Layout>} />
+            <Route path="/witness-lab" element={<Layout><WitnessLab /></Layout>} />
+            <Route path="/practice" element={<Layout><ArgumentPractice /></Layout>} />
+            <Route path="/sessions" element={<Layout><SessionHistory /></Layout>} />
+            <Route path="/jury" element={<Layout><MockJury /></Layout>} />
+            <Route path="/timeline" element={<Layout><EvidenceTimeline /></Layout>} />
+            <Route path="/strategy" element={<Layout><StrategyRoom /></Layout>} />
+            <Route path="/docs" element={<Layout><DraftingAssistant /></Layout>} />
+            <Route path="/settings" element={<Layout><SettingsPage /></Layout>} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </HashRouter>
+
+        {/* Toast Notifications */}
+        <ToastContainer
+          position="top-right"
+          autoClose={5000}
+          hideProgressBar={false}
+          newestOnTop
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme={theme}
+        />
+      </AppContext.Provider>
+    </ErrorBoundary>
   );
 };
 
