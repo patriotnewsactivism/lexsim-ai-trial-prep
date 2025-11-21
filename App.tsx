@@ -12,6 +12,7 @@ import SettingsPage from './components/Settings';
 import SessionHistory from './components/SessionHistory';
 import MockJury from './components/MockJury';
 import EvidenceTimeline from './components/EvidenceTimeline';
+import LandingPage from './components/LandingPage';
 import { MOCK_CASES } from './constants';
 import { Case } from './types';
 import { loadCases, saveCases, loadActiveCaseId, saveActiveCaseId, loadPreferences } from './utils/storage';
@@ -204,21 +205,23 @@ const App = () => {
       setTheme
     }}>
       <HashRouter>
-        <Layout>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/cases" element={<CaseManager />} />
-            <Route path="/witness-lab" element={<WitnessLab />} />
-            <Route path="/practice" element={<ArgumentPractice />} />
-            <Route path="/sessions" element={<SessionHistory />} />
-            <Route path="/jury" element={<MockJury />} />
-            <Route path="/timeline" element={<EvidenceTimeline />} />
-            <Route path="/strategy" element={<StrategyRoom />} />
-            <Route path="/docs" element={<DraftingAssistant />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Layout>
+        <Routes>
+          {/* Landing page without app layout */}
+          <Route path="/landing" element={<LandingPage />} />
+
+          {/* App routes with layout */}
+          <Route path="/" element={<Layout><Dashboard /></Layout>} />
+          <Route path="/cases" element={<Layout><CaseManager /></Layout>} />
+          <Route path="/witness-lab" element={<Layout><WitnessLab /></Layout>} />
+          <Route path="/practice" element={<Layout><ArgumentPractice /></Layout>} />
+          <Route path="/sessions" element={<Layout><SessionHistory /></Layout>} />
+          <Route path="/jury" element={<Layout><MockJury /></Layout>} />
+          <Route path="/timeline" element={<Layout><EvidenceTimeline /></Layout>} />
+          <Route path="/strategy" element={<Layout><StrategyRoom /></Layout>} />
+          <Route path="/docs" element={<Layout><DraftingAssistant /></Layout>} />
+          <Route path="/settings" element={<Layout><SettingsPage /></Layout>} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
       </HashRouter>
     </AppContext.Provider>
   );
