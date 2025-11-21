@@ -5,6 +5,7 @@ import { Juror, JuryDeliberation, JuryVerdict } from '../types';
 import { Users, Play, AlertCircle, TrendingUp, TrendingDown, Minus, CheckCircle, XCircle, MessageSquare, Loader2, Info, Brain, Scale } from 'lucide-react';
 import { GoogleGenAI, Type } from "@google/genai";
 import { Link } from 'react-router-dom';
+import { handleError, handleSuccess } from '../utils/errorHandler';
 
 const apiKey = process.env.API_KEY || '';
 const ai = new GoogleGenAI({ apiKey });
@@ -158,8 +159,7 @@ Return a JSON array of deliberation statements in this format:
       await generateVerdict(deliberationData);
 
     } catch (error) {
-      console.error('Deliberation failed', error);
-      alert('Failed to simulate jury deliberation. Check API key and try again.');
+      handleError(error, 'Failed to simulate jury deliberation. Please check your API key and try again.', 'MockJury');
       setIsDeliberating(false);
     }
   };
@@ -225,7 +225,7 @@ Return JSON with:
       setIsDeliberating(false);
 
     } catch (error) {
-      console.error('Verdict generation failed', error);
+      handleError(error, 'Failed to generate verdict. Please try again.', 'MockJury');
       setIsDeliberating(false);
     }
   };

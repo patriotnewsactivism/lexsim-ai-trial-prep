@@ -3,6 +3,7 @@ import React, { useState, useContext } from 'react';
 import { AppContext } from '../App';
 import { FileText, Sparkles, Download, Copy, Check, AlertCircle, Loader2 } from 'lucide-react';
 import { GoogleGenAI, Type } from "@google/genai";
+import { handleError, handleSuccess } from '../utils/errorHandler';
 
 const apiKey = process.env.API_KEY || '';
 const ai = new GoogleGenAI({ apiKey });
@@ -150,10 +151,15 @@ Generate the complete document ready for attorney review.`;
         }
       });
 
-      setGeneratedContent(response.text || '');
+      const content = response.text || '';
+      setGeneratedContent(content);
+      if (content) {
+        handleSuccess('Document generated successfully');
+      }
     } catch (err: any) {
-      console.error('Document generation failed', err);
-      setError(`Generation failed: ${err.message || 'Unknown error'}`);
+      const errorMessage = `Document generation failed: ${err.message || 'Unknown error'}`;
+      handleError(err, errorMessage, 'DraftingAssistant');
+      setError(errorMessage);
     } finally {
       setIsGenerating(false);
     }

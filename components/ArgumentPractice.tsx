@@ -7,6 +7,7 @@ import { Mic, MicOff, Activity, Volume2, AlertTriangle, BarChart2, Lightbulb, Al
 import { GoogleGenAI, LiveServerMessage, Modality, Type, FunctionDeclaration, Blob } from "@google/genai";
 import { getTrialSimSystemInstruction } from '../services/geminiService';
 import { Link } from 'react-router-dom';
+import { handleError, handleSuccess, handleWarning, handleInfo } from '../utils/errorHandler';
 
 // --- Audio Utils for Live API ---
 function createBlob(data: Float32Array): Blob {
@@ -178,7 +179,8 @@ const TrialSim = () => {
         mediaRecorderRef.current = mediaRecorder;
         setIsRecording(true);
       } catch (e) {
-        console.warn('MediaRecorder not supported, session will not be recorded', e);
+        // MediaRecorder not supported - session will not be recorded (optional feature)
+        // Fail silently as this is not critical functionality
       }
 
       // 3. Connect to Gemini
@@ -231,7 +233,7 @@ const TrialSim = () => {
         },
         callbacks: {
           onopen: () => {
-            console.log("Live Connected");
+            handleSuccess('Connected to live session');
             setIsLive(true);
             setIsConnecting(false);
 
@@ -335,7 +337,7 @@ const TrialSim = () => {
           },
           onclose: () => stopLiveSession(),
           onerror: (e) => {
-              console.error(e);
+              handleError(e, 'Live session encountered an error. Reconnecting...', 'ArgumentPractice');
               stopLiveSession();
           }
         }
@@ -343,7 +345,6 @@ const TrialSim = () => {
       sessionRef.current = sessionPromise;
 
     } catch (e: any) {
-      console.error('Live session error:', e);
       setIsConnecting(false);
 
       let errorMessage = "Failed to start live session. ";
@@ -359,10 +360,10 @@ const TrialSim = () => {
       } else if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
         errorMessage += "HTTPS is required for microphone access. Use localhost for development.";
       } else {
-        errorMessage += e.message || "Unknown error. Check console for details.";
+        errorMessage += e.message || "Unknown error occurred.";
       }
 
-      alert(errorMessage);
+      handleError(e, errorMessage, 'ArgumentPractice');
     }
   };
 
@@ -450,9 +451,11 @@ const TrialSim = () => {
 
     // Save to localStorage
     const { saveTrialSession } = await import('../utils/storage');
-    saveTrialSession(session);
+    const saved = saveTrialSession(session);
 
-    console.log('Session saved:', session);
+    if (saved) {
+      handleSuccess('Trial session saved successfully');
+    }
   };
 
   const generateSessionFeedback = (score: number, objections: number, fallacies: number, rhetoricalScore: number): string => {
