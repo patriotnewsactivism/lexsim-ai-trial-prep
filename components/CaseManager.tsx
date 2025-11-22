@@ -5,6 +5,8 @@ import { Case, CaseStatus } from '../types';
 import { FileText, Upload, Eye, AlertTriangle, CheckCircle, Search, BrainCircuit, Plus, X, BookOpen, Library } from 'lucide-react';
 import { analyzeDocument, fileToGenerativePart } from '../services/geminiService';
 import { MOCK_CASE_TEMPLATES } from '../constants';
+import { handleError, handleSuccess } from '../utils/errorHandler';
+import { validateFile } from '../utils/fileValidation';
 
 const CaseManager = () => {
   const { cases, activeCase, setActiveCase, addCase } = useContext(AppContext);
@@ -24,14 +26,18 @@ const CaseManager = () => {
   });
 
   const handleAnalyze = async () => {
-    if (!inputText) return;
+    if (!inputText.trim()) {
+      handleError(new Error('Empty input'), 'Please enter text to analyze', 'CaseManager');
+      return;
+    }
     setAnalyzing(true);
     setAnalysisResult(null);
     try {
       const result = await analyzeDocument(inputText);
       setAnalysisResult(result);
+      handleSuccess('Document analyzed successfully');
     } catch (e) {
-      console.error(e);
+      handleError(e, 'Failed to analyze document. Please check your API key and try again.', 'CaseManager');
     } finally {
       setAnalyzing(false);
     }
@@ -41,34 +47,60 @@ const CaseManager = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Validate file before uploading
+    const validation = validateFile(file, {
+      maxSizeBytes: 10 * 1024 * 1024, // 10MB
+      allowedTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/pdf']
+    });
+
+    if (!validation.valid) {
+      handleError(new Error(validation.error), validation.error || 'File validation failed', 'CaseManager');
+      e.target.value = ''; // Reset file input
+      return;
+    }
+
     setAnalyzing(true);
     setAnalysisResult(null);
     try {
       const imagePart = await fileToGenerativePart(file);
       const result = await analyzeDocument("Analyze this image document.", imagePart);
       setAnalysisResult(result);
+      handleSuccess('File analyzed successfully');
     } catch (e) {
-      console.error(e);
-      alert("Error processing file. Please check API key and try again.");
+      handleError(e, 'Failed to process file. Please check your API key and try again.', 'CaseManager');
     } finally {
       setAnalyzing(false);
+      e.target.value = ''; // Reset file input after upload
     }
   };
 
   const handleCreateCase = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Input validation
+    if (!newCaseData.title?.trim()) {
+      handleError(new Error('Missing title'), 'Please enter a case title', 'CaseManager');
+      return;
+    }
+
+    if (!newCaseData.client?.trim()) {
+      handleError(new Error('Missing client'), 'Please enter a client name', 'CaseManager');
+      return;
+    }
+
     const newCase: Case = {
       id: Date.now().toString(),
-      title: newCaseData.title || 'Untitled Case',
-      client: newCaseData.client || 'Unknown',
+      title: newCaseData.title.trim(),
+      client: newCaseData.client.trim(),
       status: CaseStatus.PRE_TRIAL,
-      opposingCounsel: newCaseData.opposingCounsel || 'Unknown',
-      judge: newCaseData.judge || 'Unknown',
+      opposingCounsel: newCaseData.opposingCounsel?.trim() || 'Unknown',
+      judge: newCaseData.judge?.trim() || 'Unknown',
       nextCourtDate: 'TBD',
-      summary: newCaseData.summary || 'No summary provided.',
+      summary: newCaseData.summary?.trim() || 'No summary provided.',
       winProbability: 50
     };
     addCase(newCase);
+    handleSuccess(`Case "${newCase.title}" created successfully`);
     setShowNewCaseModal(false);
     setNewCaseData({ title: '', client: '', opposingCounsel: '', judge: '', summary: '' });
   };
@@ -77,6 +109,7 @@ const CaseManager = () => {
     // Create a deep copy with a new ID to avoid conflicts if added multiple times
     const newCase = { ...template, id: Date.now().toString() };
     addCase(newCase);
+    handleSuccess(`Template "${newCase.title}" loaded successfully`);
     setShowLibraryModal(false);
   };
 
