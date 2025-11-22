@@ -72,20 +72,11 @@ const TrialSim = () => {
   const [isConnecting, setIsConnecting] = useState(false);
   const [liveVolume, setLiveVolume] = useState(0);
   const [objectionAlert, setObjectionAlert] = useState<{grounds: string, explanation: string} | null>(null);
-
+  
   // State for UI
   const [messages, setMessages] = useState<Message[]>([]);
   const [coachingTip, setCoachingTip] = useState<CoachingAnalysis | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  // Session recording
-  const [isRecording, setIsRecording] = useState(false);
-  const [sessionStartTime, setSessionStartTime] = useState<number>(0);
-  const [objectionsCount, setObjectionsCount] = useState(0);
-  const [fallaciesCount, setFallaciesCount] = useState(0);
-  const [rhetoricalScores, setRhetoricalScores] = useState<number[]>([]);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
 
   // Refs
   const sessionRef = useRef<any>(null);
@@ -127,15 +118,6 @@ const TrialSim = () => {
     if (!activeCase || !phase || !mode) return;
 
     setIsConnecting(true);
-
-    // Reset session metrics
-    setMessages([]);
-    setObjectionsCount(0);
-    setFallaciesCount(0);
-    setRhetoricalScores([]);
-    setSessionStartTime(Date.now());
-    audioChunksRef.current = [];
-
     try {
       // 1. Ensure AudioContext is resumed (User Gesture)
       const inputCtx = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
@@ -151,7 +133,7 @@ const TrialSim = () => {
       outputNode.connect(outputCtx.destination);
 
       // 2. Get Media Stream with HIGH FIDELITY Constraints
-      const stream = await navigator.mediaDevices.getUserMedia({
+      const stream = await navigator.mediaDevices.getUserMedia({ 
         audio: {
           channelCount: 1,
           echoCancellation: true,
@@ -161,25 +143,6 @@ const TrialSim = () => {
         }
       });
       streamRef.current = stream;
-
-      // 2b. Setup MediaRecorder for session recording
-      try {
-        const mediaRecorder = new MediaRecorder(stream, {
-          mimeType: 'audio/webm;codecs=opus'
-        });
-
-        mediaRecorder.ondataavailable = (e) => {
-          if (e.data.size > 0) {
-            audioChunksRef.current.push(e.data);
-          }
-        };
-
-        mediaRecorder.start(1000); // Collect data every second
-        mediaRecorderRef.current = mediaRecorder;
-        setIsRecording(true);
-      } catch (e) {
-        console.warn('MediaRecorder not supported, session will not be recorded', e);
-      }
 
       // 3. Connect to Gemini
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -218,16 +181,16 @@ const TrialSim = () => {
       const systemInstruction = getTrialSimSystemInstruction(phase, mode, opponentName, activeCase.summary);
 
       const sessionPromise = ai.live.connect({
-        model: 'gemini-2.5-flash-live',
+        model: 'gemini-2.5-flash-native-audio-preview-09-2025',
         config: {
           responseModalities: [Modality.AUDIO],
           speechConfig: {
-            voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Puck' } },
+            voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Puck' } }, 
           },
           systemInstruction: systemInstruction,
           tools: [{ functionDeclarations: [coachingTool, objectionTool] }],
-          inputAudioTranscription: { model: "gemini-2.5-flash-live" },
-          outputAudioTranscription: { model: "gemini-2.5-flash-live" },
+          inputAudioTranscription: { model: "gemini-2.5-flash-native-audio-preview-09-2025" },
+          outputAudioTranscription: { model: "gemini-2.5-flash-native-audio-preview-09-2025" },
         },
         callbacks: {
           onopen: () => {
@@ -296,7 +259,7 @@ const TrialSim = () => {
                  for (const fc of msg.toolCall.functionCalls) {
                      if (fc.name === 'sendCoachingTip') {
                          const args = fc.args as any;
-                         const coaching = {
+                         setCoachingTip({
                             critique: args.critique,
                             suggestion: args.suggestion,
                             sampleResponse: args.sampleResponse,
@@ -304,17 +267,7 @@ const TrialSim = () => {
                             fallaciesIdentified: args.fallaciesIdentified || [],
                             rhetoricalEffectiveness: args.rhetoricalEffectiveness || 50,
                             rhetoricalFeedback: args.rhetoricalFeedback || ""
-                         };
-                         setCoachingTip(coaching);
-
-                         // Track metrics
-                         if (coaching.fallaciesIdentified.length > 0) {
-                           setFallaciesCount(prev => prev + coaching.fallaciesIdentified.length);
-                         }
-                         if (coaching.rhetoricalEffectiveness > 0) {
-                           setRhetoricalScores(prev => [...prev, coaching.rhetoricalEffectiveness]);
-                         }
-
+                         });
                          sessionPromise.then(s => s.sendToolResponse({
                              functionResponses: { id: fc.id, name: fc.name, response: { result: "displayed" } }
                          }));
@@ -325,7 +278,6 @@ const TrialSim = () => {
                             grounds: args.grounds,
                             explanation: args.explanation
                         });
-                        setObjectionsCount(prev => prev + 1);
                         sessionPromise.then(s => s.sendToolResponse({
                             functionResponses: { id: fc.id, name: fc.name, response: { result: "alert_shown" } }
                         }));
@@ -342,129 +294,23 @@ const TrialSim = () => {
       });
       sessionRef.current = sessionPromise;
 
-    } catch (e: any) {
-      console.error('Live session error:', e);
+    } catch (e) {
+      console.error(e);
       setIsConnecting(false);
-
-      let errorMessage = "Failed to start live session. ";
-
-      if (e.name === 'NotAllowedError' || e.message?.includes('Permission')) {
-        errorMessage += "Microphone permission was denied. Please allow microphone access and try again.";
-      } else if (e.message?.includes('API key')) {
-        errorMessage += "Invalid API key. Please check your GEMINI_API_KEY in .env.local";
-      } else if (e.message?.includes('network') || e.message?.includes('fetch')) {
-        errorMessage += "Network error. Please check your internet connection.";
-      } else if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        errorMessage += "Your browser doesn't support microphone access. Try Chrome, Edge, or Safari.";
-      } else if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
-        errorMessage += "HTTPS is required for microphone access. Use localhost for development.";
-      } else {
-        errorMessage += e.message || "Unknown error. Check console for details.";
-      }
-
-      alert(errorMessage);
+      alert("Failed to connect. Please ensure microphone permissions are granted.");
     }
   };
 
-  const stopLiveSession = async () => {
-    // Save session before stopping
-    if (isRecording && activeCase && phase && mode) {
-      await saveSession();
-    }
-
+  const stopLiveSession = () => {
     setIsLive(false);
     setIsConnecting(false);
     setLiveVolume(0);
-    setIsRecording(false);
-
-    // Stop recording
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      mediaRecorderRef.current.stop();
-    }
-
     streamRef.current?.getTracks().forEach(t => t.stop());
     inputContextRef.current?.close();
     outputContextRef.current?.close();
     sourcesRef.current.forEach(s => s.stop());
     sourcesRef.current.clear();
     nextStartTimeRef.current = 0;
-  };
-
-  const saveSession = async () => {
-    if (!activeCase || !phase || !mode) return;
-
-    const duration = Math.floor((Date.now() - sessionStartTime) / 1000);
-
-    // Calculate metrics
-    const avgRhetoricalScore = rhetoricalScores.length > 0
-      ? Math.round(rhetoricalScores.reduce((a, b) => a + b, 0) / rhetoricalScores.length)
-      : 0;
-
-    const wordCount = messages
-      .filter(m => m.sender === 'user')
-      .reduce((count, msg) => count + msg.text.split(/\s+/).length, 0);
-
-    // Count filler words
-    const fillerWords = ['um', 'uh', 'like', 'you know', 'sort of', 'kind of'];
-    const fillerWordsCount = messages
-      .filter(m => m.sender === 'user')
-      .reduce((count, msg) => {
-        const text = msg.text.toLowerCase();
-        return count + fillerWords.reduce((c, word) => c + (text.match(new RegExp(word, 'g')) || []).length, 0);
-      }, 0);
-
-    // Calculate overall score (0-100)
-    const score = Math.round(
-      (avgRhetoricalScore * 0.5) + // 50% rhetorical effectiveness
-      (Math.max(0, 100 - objectionsCount * 10) * 0.3) + // 30% fewer objections
-      (Math.max(0, 100 - fallaciesCount * 15) * 0.2) // 20% fewer fallacies
-    );
-
-    // Create audio blob URL
-    let audioUrl: string | undefined;
-    if (audioChunksRef.current.length > 0) {
-      const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-      audioUrl = URL.createObjectURL(audioBlob);
-    }
-
-    const session: any = {
-      id: `session-${Date.now()}`,
-      caseId: activeCase.id,
-      caseTitle: activeCase.title,
-      phase,
-      mode,
-      date: new Date().toISOString(),
-      duration,
-      transcript: messages,
-      audioUrl,
-      score,
-      metrics: {
-        objectionsReceived: objectionsCount,
-        fallaciesCommitted: fallaciesCount,
-        avgRhetoricalScore,
-        wordCount,
-        fillerWordsCount
-      },
-      feedback: generateSessionFeedback(score, objectionsCount, fallaciesCount, avgRhetoricalScore)
-    };
-
-    // Save to localStorage
-    const { saveTrialSession } = await import('../utils/storage');
-    saveTrialSession(session);
-
-    console.log('Session saved:', session);
-  };
-
-  const generateSessionFeedback = (score: number, objections: number, fallacies: number, rhetoricalScore: number): string => {
-    if (score >= 80) {
-      return `Excellent performance! You demonstrated strong command of the material with minimal objections and effective rhetoric.`;
-    } else if (score >= 60) {
-      return `Good work! You handled the ${phase} phase competently. Focus on reducing fallacies and improving rhetorical effectiveness.`;
-    } else if (score >= 40) {
-      return `Fair performance. You received ${objections} objections and committed ${fallacies} fallacies. Review proper questioning techniques and logical argumentation.`;
-    } else {
-      return `Needs improvement. Consider practicing in Learn mode to build foundational skills before attempting higher difficulties.`;
-    }
   };
 
   // --- Render Logic ---

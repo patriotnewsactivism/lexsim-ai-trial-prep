@@ -269,7 +269,7 @@ const CaseManager = () => {
       {/* New Case Modal */}
       {showNewCaseModal && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-700 rounded-xl p-4 sm:p-6 w-full max-w-sm sm:max-w-md shadow-2xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-slate-900 border border-slate-700 rounded-xl p-6 w-full max-w-md shadow-2xl">
              <div className="flex justify-between items-center mb-4">
                <h3 className="text-xl font-bold text-white">Add New Case</h3>
                <button onClick={() => setShowNewCaseModal(false)} className="text-slate-400 hover:text-white"><X size={24} /></button>
@@ -295,7 +295,7 @@ const CaseManager = () => {
                     onChange={e => setNewCaseData({...newCaseData, client: e.target.value})}
                   />
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                    <div>
                       <label className="block text-sm text-slate-400 mb-1">Opposing Counsel</label>
                       <input 
@@ -340,7 +340,7 @@ const CaseManager = () => {
       {/* Library (Mock Cases) Modal */}
       {showLibraryModal && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-           <div className="bg-slate-900 border border-slate-700 rounded-xl p-4 sm:p-6 w-full max-w-2xl sm:max-w-3xl lg:max-w-4xl max-h-[90vh] flex flex-col shadow-2xl">
+           <div className="bg-slate-900 border border-slate-700 rounded-xl p-6 w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl">
               <div className="flex justify-between items-center mb-6 flex-shrink-0">
                 <div>
                   <h3 className="text-2xl font-bold font-serif text-white flex items-center gap-3">
