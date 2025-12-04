@@ -1,13 +1,17 @@
 
 import React, { useState } from 'react';
 import { HashRouter, Routes, Route, Navigate, useLocation, Link } from 'react-router-dom';
-import { LayoutDashboard, Scale, FileText, Users, BrainCircuit, Gavel, Settings, Menu, X, MessageSquare, Mic } from 'lucide-react';
+import { LayoutDashboard, Scale, FileText, Users, BrainCircuit, Gavel, Settings, Menu, X, MessageSquare, Mic, FileAudio } from 'lucide-react';
 import { ToastContainer } from 'react-toastify';
 import Dashboard from './components/Dashboard';
 import CaseManager from './components/CaseManager';
 import WitnessLab from './components/WitnessLab';
 import StrategyRoom from './components/StrategyRoom';
 import ArgumentPractice from './components/ArgumentPractice';
+import LandingPage from './components/LandingPage';
+import PrivacyPolicy from './components/PrivacyPolicy';
+import TermsOfService from './components/TermsOfService';
+import Transcriber from './components/Transcriber';
 import { MOCK_CASES } from './constants';
 import { Case } from './types';
 
@@ -59,6 +63,7 @@ const Sidebar = ({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: (v: boolea
           <NavItem path="/practice" icon={Mic} label="Trial Simulator" />
           <NavItem path="/witness-lab" icon={Users} label="Witness Lab" />
           <NavItem path="/strategy" icon={BrainCircuit} label="Strategy & AI" />
+          <NavItem path="/transcriber" icon={FileAudio} label="Transcriber" />
           <NavItem path="/docs" icon={FileText} label="Drafting Assistant" />
           <div className="mt-auto border-t border-slate-800 pt-4 mb-6">
             <NavItem path="/settings" icon={Settings} label="Settings" />
@@ -130,10 +135,14 @@ const App = () => {
         <Layout>
           <Routes>
             <Route path="/" element={<Dashboard />} />
+            <Route path="/landing" element={<LandingPage />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/tos" element={<TermsOfService />} />
             <Route path="/cases" element={<CaseManager />} />
             <Route path="/witness-lab" element={<WitnessLab />} />
             <Route path="/practice" element={<ArgumentPractice />} />
             <Route path="/strategy" element={<StrategyRoom />} />
+            <Route path="/transcriber" element={<Transcriber />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Layout>

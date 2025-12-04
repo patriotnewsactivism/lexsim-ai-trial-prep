@@ -90,3 +90,16 @@ export interface CoachingAnalysis {
   rhetoricalFeedback: string; // Brief comment on tone/persuasion
   teleprompterScript?: string; // New field for providing text to read/reference
 }
+
+export interface Transcription {
+  id: string;
+  caseId: string;
+  fileName: string;
+  fileUrl?: string;
+  text: string;
+  duration?: number; // in seconds
+  speakers?: string[];
+  timestamp: number;
+  tags?: string[];
+  notes?: string;
+}

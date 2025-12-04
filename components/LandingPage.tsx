@@ -399,10 +399,10 @@ const LandingPage = () => {
               <span className="text-xl font-serif font-bold text-white">LexSim</span>
             </div>
             <div className="flex gap-8 text-sm text-slate-400">
-              <a href="#" className="hover:text-white transition-colors">Privacy</a>
-              <a href="#" className="hover:text-white transition-colors">Terms</a>
-              <a href="#" className="hover:text-white transition-colors">Contact</a>
-              <a href="#" className="hover:text-white transition-colors">Support</a>
+              <Link to="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</Link>
+              <Link to="/tos" className="hover:text-white transition-colors">Terms of Service</Link>
+              <a href="https://transcribe.casebuddy.live" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Transcriber</a>
+              <a href="mailto:support@casebuddy.live" className="hover:text-white transition-colors">Support</a>
             </div>
             <div className="text-sm text-slate-500">
               © 2025 LexSim. All rights reserved.
