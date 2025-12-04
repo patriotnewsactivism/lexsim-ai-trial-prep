@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { HashRouter, Routes, Route, Navigate, useLocation, Link } from 'react-router-dom';
 import { LayoutDashboard, Scale, FileText, Users, BrainCircuit, Gavel, Settings, Menu, X, MessageSquare, Mic } from 'lucide-react';
+import { ToastContainer } from 'react-toastify';
 import Dashboard from './components/Dashboard';
 import CaseManager from './components/CaseManager';
 import WitnessLab from './components/WitnessLab';
@@ -137,6 +138,7 @@ const App = () => {
           </Routes>
         </Layout>
       </HashRouter>
+      <ToastContainer />
     </AppContext.Provider>
   );
 };
